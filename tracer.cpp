@@ -26,25 +26,21 @@ F B(V p, V l, V h) {
   R - L(L(L(l.x, h.x), L(l.y, h.y)), L(l.z, h.z));
 }
 F S(V p, I &m) {
-  F d = 1\
-e9;
+  F d = 1e9;
   V f = p;
   f.z = 0;
-  char l[] = "5O5_5W9W5_9_COC_AOEOA_E_IOQ_I_QOUOY_Y_]OWW[WaOa_aW\
-eWa_e_cWiO";
+  char l[] = "5O5_5W9W5_9_COC_AOEOA_E_IOQ_I_QOUOY_Y_]OWW[WaOa_aWeWa_e_cWiO";
   for (I i = 0; i < 60; i += 4) {
     V b = V(l[i] - 79, l[i + 1] - 79) * .5,
       e = V(l[i + 2] - 79, l[i + 3] - 79) * .5 + b * -1,
       o = f + (b + e * L(-L((b + f * -1) % e / (e % e), 0), 1)) * -1;
     d = L(d, o % o);
   }
-  d = sq\
-rtf(d);
+  d = sqrtf(d);
   V a[] = {V(-11, 6), V(11, 6)};
   for (I i = 2; i--;) {
     V o = f + a[i] * -1;
-    d = L(d, o.x > 0 ? f\
-absf(sqrtf(o % o) - 2)
+    d = L(d, o.x > 0 ? fabsf(sqrtf(o % o) - 2)
                      : (o.y += o.y > 0 ? -2 : 2, sqrtf(o % o)));
   }
   d = powf(powf(d, 8) + powf(p.z, 8), .125) - .5;
@@ -104,8 +100,7 @@ I main() {
   V e(-22, 5, 25),
       g = !(V(-3, 4, 0) + e * -1), l = !V(g.z, 0, -g.x) * (1. / w),
       u(g.y * l.z - g.z * l.y, g.z * l.x - g.x * l.z, g.x * l.y - g.y * l.x);
-  printf("P\
-6 %d %d 255 ",
+  printf("P6 %d %d 255 ",
          w, h);
   for (I y = h; y--;)
     for (I x = w; x--;) {
