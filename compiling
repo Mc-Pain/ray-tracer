@@ -1,0 +1,2 @@
+clang -o card2 -lm -O3 tracer.cpp
+time ./card2 > pixar.ppm
