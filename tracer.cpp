@@ -29,19 +29,23 @@ F S(V p, I &m) {
   F d = 1e9;
   V f = p;
   f.z = 0;
-  char l[] = "5O5_5W9W5_9_COC_AOEOA_E_IOQ_I_QOUOY_Y_]OWW[WaOa_aWeWa_e_cWiO";
-  for (I i = 0; i < 60; i += 4) {
+  char l[] = "5O5_" "5O=O"        // L
+             "COC_" "AOEO" "A_E_" // I
+             "IOI_" "I_QO" "QOQ_" // N
+             "USU_" "]S]_"        // U
+             "aOi_" "a_iO";       // X
+  for (I i = 0; i < 48; i += 4) {
     V b = V(l[i] - 79, l[i + 1] - 79) * .5,
       e = V(l[i + 2] - 79, l[i + 3] - 79) * .5 + b * -1,
       o = f + (b + e * L(-L((b + f * -1) % e / (e % e), 0), 1)) * -1;
     d = L(d, o % o);
   }
   d = sqrtf(d);
-  V a[] = {V(-11, 6), V(11, 6)};
+  V a[] = {V(5, 2)};
   for (I i = 2; i--;) {
     V o = f + a[i] * -1;
-    d = L(d, o.x > 0 ? fabsf(sqrtf(o % o) - 2)
-                     : (o.y += o.y > 0 ? -2 : 2, sqrtf(o % o)));
+    d = L(d, o.y < 0 ? fabsf(sqrtf(o % o) - 2)
+                     : (o.x += o.x > 0 ? -2 : 2, sqrtf(o % o)));
   }
   d = powf(powf(d, 8) + powf(p.z, 8), .125) - .5;
   m = 1;
