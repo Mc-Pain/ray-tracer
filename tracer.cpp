@@ -101,7 +101,7 @@ V T(V o, V d) {
   R r;
 }
 I main() {
-  I w = 960, h = 540, s = 16;
+  I w = 1920, h = 1080, s = 4096;
   V e(-22, 5, 25),
       g = !(V(-3, 4, 0) + e * -1), l = !V(g.z, 0, -g.x) * (1. / w),
       u(g.y * l.z - g.z * l.y, g.z * l.x - g.x * l.z, g.x * l.y - g.y * l.x);
