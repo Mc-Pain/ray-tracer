@@ -106,7 +106,8 @@ I main() {
       u(g.y * l.z - g.z * l.y, g.z * l.x - g.x * l.z, g.x * l.y - g.y * l.x);
   printf("P6 %d %d 255 ",
          w, h);
-  for (I y = h; y--;)
+  for (I y = h; y--;) {
+    fprintf(stderr, "Rendered %d rows out of %d\n", y, h);
     for (I x = w; x--;) {
       V c;
       for (I p = s; p--;)
@@ -116,4 +117,5 @@ I main() {
       c = V(c.x / o.x, c.y / o.y, c.z / o.z) * 255;
       printf("%c%c%c", (I)c.x, (I)c.y, (I)c.z);
     }
+  }
 } // Andrew Kensler
