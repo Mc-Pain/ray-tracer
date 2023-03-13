@@ -1,6 +1,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h> // card > pixar.ppm
+#include <omp.h>
 #define R return
 #define O operator
 typedef float F;
@@ -110,7 +111,9 @@ I main() {
     fprintf(stderr, "Rendered %d rows out of %d\n", y, h);
     for (I x = w; x--;) {
       V c;
-      for (I p = s; p--;)
+      I p;
+#pragma omp parallel for private(p) shared(s, c, e, g, l, x, w, u, y, h)
+      for (p = s; p > 0; p--)
         c = c + T(e, !(g + l * (x - w / 2 + U()) + u * (y - h / 2 + U())));
       c = c * (1. / s) + 14. / 241;
       V o = c + 1;
