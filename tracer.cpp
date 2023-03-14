@@ -72,7 +72,7 @@ I M(V o, V d, V &h, V &n) {
   R 0;
 }
 V T(V o, V d) {
-  V h, n, r, t = 1, l(!V(.6, .6, 1));
+  V h, n, r, t = 1;
   for (I b = 3; b--;) {
     I m = M(o, d, h, n);
     if (!m)
@@ -90,15 +90,22 @@ V T(V o, V d) {
         t = t * .2;
       } else {
         // diffuse reflection
-        F i = n % l, p = 6.283185 * U(), c = U(), s = sqrtf(1 - c),
+        F p = 6.283185 * U(), c = U(), s = sqrtf(1 - c),
           g = n.z < 0 ? -1 : 1, u = -1 / (g + n.z), v = n.x * n.y * u;
         d = V(v, g + n.y * n.y * u, -n.y) * (cosf(p) * s) +
             V(1 + g * n.x * n.x * u, g * v, -g * n.x) * (sinf(p) * s) +
             n * sqrtf(c);
         o = h + d * .1;
         t = t * .2;
-        if (i > 0 && M(h + n * .1, l, h, n) == 3)
-          r = r + t * V(500, 400, 100) * i;
+
+        V ls[] = {V(.6, .6, 1)};
+        V cs[] = {V(500, 400, 100)};
+        for (I a = 0; a < 1; a++) {
+          V l = !ls[a], hc = h, nc = n;
+          F i = n % l;
+          if (i > 0 && M(h + n * .1, l, hc, nc) == 3)
+            r = r + t * cs[a] * i;
+        }
       }
     }
     if (m == 3) {
