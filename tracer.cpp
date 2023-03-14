@@ -71,6 +71,104 @@ I M(V o, V d, V &h, V &n) {
         m;
   R 0;
 }
+
+// sky light
+bool solveQuadratic(F a, F b, F c, F& x1, F& x2)
+{
+    if (b == 0) {
+        // Handle special case where the the two vector ray.dir and V are perpendicular
+        // with V = ray.orig - sphere.centre
+        if (a == 0) return false;
+        x1 = 0; x2 = sqrtf(-c / a);
+        return true;
+    }
+    F discr = b * b - 4 * a * c;
+
+    if (discr < 0) return false;
+
+    F q = (b < 0.f) ? -0.5f * (b - sqrtf(discr)) : -0.5f * (b + sqrtf(discr));
+    x1 = q / a;
+    x2 = c / q;
+
+    return true;
+}
+bool raySphereIntersect(const V& orig, const V& dir, const F& radius, F& t0, F& t1)
+{
+    // They ray dir is normalized so A = 1
+    F A = dir.x * dir.x + dir.y * dir.y + dir.z * dir.z;
+    F B = 2 * (dir.x * orig.x + dir.y * orig.y + dir.z * orig.z);
+    F C = orig.x * orig.x + orig.y * orig.y + orig.z * orig.z - radius * radius;
+
+    if (!solveQuadratic(A, B, C, t0, t1)) return false;
+
+    if (t0 > t1) std::swap(t0, t1);
+
+    return true;
+}
+V computeIncidentLight(V sunDirection, V& orig, V& dir, F tmin, F tmax)
+{
+    sunDirection = !sunDirection;
+    V betaR(3.8e-6f, 13.5e-6f, 33.1e-6f);
+    V betaM(21e-6f);
+    F earthRadius = 6360e3,
+      atmosphereRadius = 6420e3,
+      Hr = 7994,
+      Hm = 1200;
+
+    orig.y += earthRadius;
+    F t0, t1;
+    if (!raySphereIntersect(orig, dir, atmosphereRadius, t0, t1) || t1 < 0) return 0;
+    if (t0 > tmin && t0 > 0) tmin = t0;
+    if (t1 < tmax) tmax = t1;
+    I numSamples = 16;
+    I numSamplesLight = 8;
+    F segmentLength = (tmax - tmin) / numSamples;
+    F tCurrent = tmin;
+    V sumR(0), sumM(0); // mie and rayleigh contribution
+    F opticalDepthR = 0, opticalDepthM = 0;
+    F mu = dir % sunDirection; // mu in the paper which is the cosine of the angle between the sun direction and the ray direction
+    F phaseR = 3.f / (16.f * 3.141592) * (1 + mu * mu);
+    F g = 0.76f;
+    F phaseM = 3.f / (8.f * 3.141592) * ((1.f - g * g) * (1.f + mu * mu)) / ((2.f + g * g) * pow(1.f + g * g - 2.f * g * mu, 1.5f));
+    for (I i = 0; i < numSamples; ++i) {
+        V samplePosition = orig + V(tCurrent + segmentLength * 0.5f) * dir;
+        F height = sqrtf(samplePosition % samplePosition) - earthRadius;
+        // compute optical depth for light
+        F hr = exp(-height / Hr) * segmentLength;
+        F hm = exp(-height / Hm) * segmentLength;
+        opticalDepthR += hr;
+        opticalDepthM += hm;
+        // light optical depth
+        F t0Light, t1Light;
+        raySphereIntersect(samplePosition, sunDirection, atmosphereRadius, t0Light, t1Light);
+        F segmentLengthLight = t1Light / numSamplesLight, tCurrentLight = 0;
+        F opticalDepthLightR = 0, opticalDepthLightM = 0;
+        I j;
+        for (j = 0; j < numSamplesLight; ++j) {
+            V samplePositionLight = samplePosition + V(tCurrentLight + segmentLengthLight * 0.5f) * sunDirection;
+            F heightLight = sqrtf(samplePositionLight % samplePositionLight) - earthRadius;
+            if (heightLight < 0) break;
+            opticalDepthLightR += exp(-heightLight / Hr) * segmentLengthLight;
+            opticalDepthLightM += exp(-heightLight / Hm) * segmentLengthLight;
+            tCurrentLight += segmentLengthLight;
+        }
+        if (j == numSamplesLight) {
+            V tau = betaR * (opticalDepthR + opticalDepthLightR) + betaM * 1.1f * (opticalDepthM + opticalDepthLightM);
+            V attenuation(exp(-tau.x), exp(-tau.y), exp(-tau.z));
+            sumR = sumR + attenuation * hr;
+            sumM = sumM + attenuation * hm;
+        }
+        tCurrent += segmentLength;
+    }
+
+    // [comment]
+    // We use a magic number here for the intensity of the sun (20). We will make it more
+    // scientific in a future revision of this lesson/code
+    // [/comment]
+    V ret = (sumR * betaR * phaseR + sumM * betaM * phaseM);
+    R ret;
+}
+
 V T(V o, V d) {
   V h, n, r, t = 1;
   for (I b = 3; b--;) {
@@ -109,7 +207,7 @@ V T(V o, V d) {
       }
     }
     if (m == 3) {
-      r = r + t * V(50, 80, 100);
+      r = r + t * computeIncidentLight(V(.6, .6, 1), o, d, 0, 1e9) * V(50, 80, 100);
       break;
     }
   }
