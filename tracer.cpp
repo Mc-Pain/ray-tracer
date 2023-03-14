@@ -83,15 +83,23 @@ V T(V o, V d) {
       t = t * .2;
     }
     if (m == 2) {
-      F i = n % l, p = 6.283185 * U(), c = U(), s = sqrtf(1 - c),
-        g = n.z < 0 ? -1 : 1, u = -1 / (g + n.z), v = n.x * n.y * u;
-      d = V(v, g + n.y * n.y * u, -n.y) * (cosf(p) * s) +
-          V(1 + g * n.x * n.x * u, g * v, -g * n.x) * (sinf(p) * s) +
-          n * sqrtf(c);
-      o = h + d * .1;
-      t = t * .2;
-      if (i > 0 && M(h + n * .1, l, h, n) == 3)
-        r = r + t * V(500, 400, 100) * i;
+      if (U() < 0.05) {
+        // specular reflection
+        d = d + n * (n % d * -2);
+        o = h + d * .1;
+        t = t * .2;
+      } else {
+        // diffuse reflection
+        F i = n % l, p = 6.283185 * U(), c = U(), s = sqrtf(1 - c),
+          g = n.z < 0 ? -1 : 1, u = -1 / (g + n.z), v = n.x * n.y * u;
+        d = V(v, g + n.y * n.y * u, -n.y) * (cosf(p) * s) +
+            V(1 + g * n.x * n.x * u, g * v, -g * n.x) * (sinf(p) * s) +
+            n * sqrtf(c);
+        o = h + d * .1;
+        t = t * .2;
+        if (i > 0 && M(h + n * .1, l, h, n) == 3)
+          r = r + t * V(500, 400, 100) * i;
+      }
     }
     if (m == 3) {
       r = r + t * V(50, 80, 100);
