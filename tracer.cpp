@@ -116,14 +116,17 @@ V T(V o, V d) {
   R r;
 }
 I main() {
+  FILE *f;
+  f = fopen("pixar.ppm", "wb");
+
   I w = 1920, h = 1080, s = 4096;
   V e(-22, 5, 25),
       g = !(V(-3, 4, 0) + e * -1), l = !V(g.z, 0, -g.x) * (1. / w),
       u(g.y * l.z - g.z * l.y, g.z * l.x - g.x * l.z, g.x * l.y - g.y * l.x);
-  printf("P6 %d %d 255 ",
-         w, h);
+  fprintf(f, "P6 %d %d 255 ",
+          w, h);
   for (I y = h; y--;) {
-    fprintf(stderr, "Rendered %d rows out of %d\n", y, h);
+    printf("Rendered %d rows out of %d\n", y, h);
     for (I x = w; x--;) {
       V c;
       I p;
@@ -133,7 +136,8 @@ I main() {
       c = c * (1. / s) + 14. / 241;
       V o = c + 1;
       c = V(c.x / o.x, c.y / o.y, c.z / o.z) * 255;
-      printf("%c%c%c", (I)c.x, (I)c.y, (I)c.z);
+      fprintf(f, "%c%c%c", (I)c.x, (I)c.y, (I)c.z);
     }
   }
+  fclose(f);
 } // Andrew Kensler
