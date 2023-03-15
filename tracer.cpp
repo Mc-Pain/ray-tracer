@@ -201,8 +201,10 @@ V T(V o, V d) {
         for (I a = 0; a < 1; a++) {
           V l = !ls[a], hc = h, nc = n;
           F i = n % l;
-          if (i > 0 && M(h + n * .1, l, hc, nc) == 3)
-            r = r + t * cs[a] * i;
+          if (i > 0 && M(h + n * .1, l, hc, nc) == 3) {
+            V incident = computeIncidentLight(l, o, l, 0, 1e9);
+            r = r + t * incident * cs[a] * i;
+          }
         }
       }
     }
