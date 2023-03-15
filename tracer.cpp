@@ -105,7 +105,7 @@ bool raySphereIntersect(const V& orig, const V& dir, const F& radius, F& t0, F& 
 
     return true;
 }
-V computeIncidentLight(V sunDirection, V& orig, V& dir, F tmin, F tmax)
+V computeIncidentLight(V sunDirection, V orig, V dir, F tmin, F tmax)
 {
     sunDirection = !sunDirection;
     V betaR(3.8e-6f, 13.5e-6f, 33.1e-6f);
@@ -171,6 +171,16 @@ V computeIncidentLight(V sunDirection, V& orig, V& dir, F tmin, F tmax)
 
 V T(V o, V d) {
   V h, n, r, t = 1;
+
+  // light sources
+  V ls[] = {
+    V(.6, .6, 1),
+  };
+  V cs[] = {
+    V(500, 400, 100),
+  };
+  I w = 1;
+
   for (I b = 3; b--;) {
     I m = M(o, d, h, n);
     if (!m)
@@ -196,9 +206,7 @@ V T(V o, V d) {
         o = h + d * .1;
         t = t * .2;
 
-        V ls[] = {V(.6, .6, 1)};
-        V cs[] = {V(500, 400, 100)};
-        for (I a = 0; a < 1; a++) {
+        for (I a = 0; a < w; a++) {
           V l = !ls[a], hc = h, nc = n;
           F i = n % l;
           if (i > 0 && M(h + n * .1, l, hc, nc) == 3) {
@@ -209,7 +217,10 @@ V T(V o, V d) {
       }
     }
     if (m == 3) {
-      r = r + t * computeIncidentLight(V(.6, .6, 1), o, d, 0, 1e9) * V(50, 80, 100);
+      for (I a = 0; a < w; a++) {
+        V l = !ls[a];
+        r = r + t * computeIncidentLight(l, o, d, 0, 1e9) * cs[a];
+      }
       break;
     }
   }
