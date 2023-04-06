@@ -2,10 +2,15 @@
 #include <stdio.h>
 #include <stdlib.h> // card > pixar.ppm
 #include <omp.h>
+#include <time.h>
 #define R return
 #define O operator
 typedef float F;
 typedef int I;
+
+static long int s_time;
+static struct tm m_time;
+
 struct V {
   F x, y, z;
   V(F v = 0) { x = y = z = v; }
@@ -26,28 +31,84 @@ F B(V p, V l, V h) {
   h = h + p * -1;
   R - L(L(L(l.x, h.x), L(l.y, h.y)), L(l.z, h.z));
 }
+
+bool sevenSegTest(int digit, int segment) {
+  switch (segment) {
+    case 0:
+      return !(digit == 1 || digit == 4);
+      break;
+    case 1:
+      return !(digit == 5 || digit == 6);
+      break;
+    case 2:
+      return digit != 2;
+      break;
+    case 3:
+      return !(digit == 1 || digit == 4 || digit == 7);
+      break;
+    case 4:
+      return digit == 0 || digit == 2 || digit == 6 || digit == 8;
+      break;
+    case 5:
+      return !(digit == 1 || digit == 2 || digit == 3 || digit == 7);
+      break;
+    case 6:
+      return !(digit == 0 || digit == 1 || digit == 7);
+      break;
+    default:
+      return false;
+  }
+}
+
 F S(V p, I &m) {
   F d = 1e9;
   V f = p;
   f.z = 0;
-  char l[] = "5O5_" "5O=O"        // L
-             "COC_" "AOEO" "A_E_" // I
-             "IOI_" "I_QO" "QOQ_" // N
-             "USU_" "]S]_"        // U
-             "aOi_" "a_iO";       // X
-  for (I i = 0; i < 48; i += 4) {
-    V b = V(l[i] - 79, l[i + 1] - 79) * .5,
-      e = V(l[i + 2] - 79, l[i + 3] - 79) * .5 + b * -1,
+
+  char l[] =
+             "5_=_"  // A
+             "=W=_"  // B
+             "=O=W"  // C
+             "5O=O"  // D
+             "5O5W"  // E
+             "5W5_"  // F
+             "5W=W"  // G segment
+             ;
+
+  int offsets[] = {0, 12, 28, 40};
+  for (I j = 0; j < 4; j++) {
+    I digit;
+    switch (j) {
+      case 0:
+        digit = m_time.tm_hour / 10;
+        break;
+      case 1:
+        digit = m_time.tm_hour % 10;
+        break;
+      case 2:
+        digit = m_time.tm_min / 10;
+        break;
+      case 3:
+        digit = m_time.tm_min % 10;
+        break;
+    }
+    for (I i = 0; i < 28; i += 4) {
+      if (sevenSegTest(digit, i / 4)) {
+        V b = V(l[i] - 79 + offsets[j], l[i + 1] - 79) * .5,
+          e = V(l[i + 2] - 79 + offsets[j], l[i + 3] - 79) * .5 + b * -1,
+          o = f + (b + e * L(-L((b + f * -1) % e / (e % e), 0), 1)) * -1;
+        d = L(d, o % o);
+      }
+    }
+  }
+  char ll[] = "MSMS" "M[M["; // hhmm separator
+  for (I i = 0; i < 8; i += 4) {
+    V b = V(ll[i] - 79, ll[i + 1] - 79) * .5,
+      e = V(ll[i + 2] - 79, ll[i + 3] - 79) * .5 + b * -1,
       o = f + (b + e * L(-L((b + f * -1) % e / (e % e), 0), 1)) * -1;
     d = L(d, o % o);
   }
   d = sqrtf(d);
-  V a[] = {V(5, 2)};
-  for (I i = 2; i--;) {
-    V o = f + a[i] * -1;
-    d = L(d, o.y < 0 ? fabsf(sqrtf(o % o) - 2)
-                     : (o.x += o.x > 0 ? -2 : 2, sqrtf(o % o)));
-  }
   d = powf(powf(d, 8) + powf(p.z, 8), .125) - .5;
   m = 1;
   F r = L(
@@ -249,6 +310,9 @@ V T(V o, V d) {
 I main() {
   FILE *f;
   f = fopen("pixar.ppm", "wb");
+
+  s_time = time(NULL);
+  localtime_r (&s_time, &m_time);
 
   I w = 1920, h = 1080, s = 4096;
   V e(-22, 5, 25),
