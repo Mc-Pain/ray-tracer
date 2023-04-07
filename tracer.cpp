@@ -330,7 +330,9 @@ V T(V o, V d) {
 }
 I main() {
   FILE *f;
-  f = fopen("/tmp/pixar.ppm.tmp", "wb");
+  f = fopen("/tmp/pixar.ppm.tmp", "wbx");
+
+  if (!f) return 0;
 
   s_time = time(NULL);
   localtime_r (&s_time, &m_time);
