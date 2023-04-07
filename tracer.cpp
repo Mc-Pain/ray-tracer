@@ -330,7 +330,7 @@ V T(V o, V d) {
 }
 I main() {
   FILE *f;
-  f = fopen("pixar.ppm", "wb");
+  f = fopen("/tmp/pixar.ppm.tmp", "wb");
 
   s_time = time(NULL);
   localtime_r (&s_time, &m_time);
@@ -357,4 +357,6 @@ I main() {
     }
   }
   fclose(f);
+
+  rename("/tmp/pixar.ppm.tmp", "/tmp/pixar.ppm");
 } // Andrew Kensler
