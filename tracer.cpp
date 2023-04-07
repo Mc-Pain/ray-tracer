@@ -32,6 +32,8 @@ F B(V p, V l, V h) {
   R - L(L(L(l.x, h.x), L(l.y, h.y)), L(l.z, h.z));
 }
 
+static V position = V(0);
+
 bool sevenSegTest(int digit, int segment) {
   switch (segment) {
     case 0:
@@ -230,37 +232,56 @@ V computeIncidentLight(V sunDirection, V orig, V dir, F tmin, F tmax)
     R ret;
 }
 
+void calculateSunPosition() {
+  position = V(0, 0, 1); // x+: west, y+: above horizon, z+: north, initial is south, looking at SW
+
+  F x1, y1, z1;
+
+  // apply seasonal daylength
+  F declination = m_time.tm_yday + 10; // winter solstice = 22 Dec
+  declination /= (365 / 6.283185);
+  declination = -23.5 * cosf(declination);
+  declination /= (360 / 6.283185);
+  y1 = position.y * cosf(declination) + position.z * sinf(declination);
+  z1 = -position.y * sinf(declination) + position.z * cosf(declination);
+  position.y = y1;
+  position.z = z1;
+
+  // calculate sun rotation (degrees)
+  F time = (m_time.tm_hour * 15 + m_time.tm_min / 4.0);
+
+  time -= 3 * 15;   // subtract timezone
+  time += 36.6;     // add longitude
+  time /= (360 / 6.283185); // to radians
+
+  // rotate along y
+  x1 = position.x * cosf(time) - position.z * sinf(time);
+  z1 = position.x * sinf(time) + position.z * cosf(time);
+  position.x = x1;
+  position.z = z1;
+
+  // rotate along x
+  F angle = 55.1 - 90; // latitude (55.1 N)
+  angle /= (360 / 6.283185);
+
+  y1 = position.y * cosf(angle) + position.z * sinf(angle);
+  z1 = -position.y * sinf(angle) + position.z * cosf(angle);
+  position.y = y1;
+  position.z = z1;
+}
+
+
 V T(V o, V d) {
   V h, n, r, t = 1;
 
   // light sources
   V ls[] = {
-    V(.6, .6, 1),
-    V(.6, .59, 1),
-    V(.6, .58, 1),
-    V(.6, .57, 1),
-    V(.6, .56, 1),
-    V(.6, .55, 1),
-    V(.6, .54, 1),
-    V(.6, .53, 1),
-    V(.6, .52, 1),
-    V(.6, .51, 1),
-    V(.6, .5, 1),
+    position,
   };
   V cs[] = {
-    V(500, 0, 0),
-    V(500, 200, 0),
-    V(500, 400, 0),
-    V(400, 500, 0),
-    V(200, 500, 0),
-    V(0, 500, 0),
-    V(0, 500, 200),
-    V(0, 500, 400),
-    V(0, 400, 500),
-    V(0, 200, 500),
-    V(0, 0, 500),
+    V(500, 500, 500),
   };
-  I w = 11;
+  I w = 1;
 
   for (I b = 3; b--;) {
     I m = M(o, d, h, n);
@@ -313,6 +334,7 @@ I main() {
 
   s_time = time(NULL);
   localtime_r (&s_time, &m_time);
+  calculateSunPosition();
 
   I w = 1920, h = 1080, s = 4096;
   V e(-22, 5, 25),
