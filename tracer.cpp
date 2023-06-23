@@ -293,6 +293,26 @@ V T(V o, V d) {
       d = d + n * (n % d * -2);
       o = h + d * .1;
       t = t * .2;
+
+      // glowing letters?
+      V letter_color;
+      I season = ((m_time.tm_mon + 1) % 12) / 3; // 0-11 -> 0-3
+
+      switch (season) {
+        case 0: // winter
+          letter_color = V(0, 5, 5);
+          break;
+        case 1: // spring
+          letter_color = V(0, 5, 0);
+          break;
+        case 2: // summer
+          letter_color = V(5, 5, 0);
+          break;
+        case 3: // fall
+          letter_color = V(5, 1, 0);
+          break;
+      }
+      r = r + letter_color;
     }
     if (m == 2) {
       if (U() < 0) {
