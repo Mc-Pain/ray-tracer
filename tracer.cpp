@@ -295,7 +295,7 @@ V T(V o, V d) {
       t = t * .2;
     }
     if (m == 2) {
-      if (U() < 0.05) {
+      if (U() < 0) {
         // specular reflection
         d = d + n * (n % d * -2);
         o = h + d * .1;
