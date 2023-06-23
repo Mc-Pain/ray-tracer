@@ -121,7 +121,7 @@ F S(V p, I &m) {
       B(V(fmodf(fabsf(p.x), 8), p.y, p.z), V(1.5, 18.5, -25), V(6.5, 20, 25)));
   if (r < d)
     d = r, m = 2;
-  F s = 19.9 - p.y;
+  F s = 9 - p.y;
   if (s < d)
     d = s, m = 3;
   R d;
