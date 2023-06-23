@@ -1,3 +1,5 @@
+//gcc -o card2 -O3 tracer.cpp -lm -fopenmp
+
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h> // card > pixar.ppm
