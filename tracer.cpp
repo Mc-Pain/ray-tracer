@@ -354,7 +354,12 @@ I main() {
         c = c + T(e, !(g + l * (x - w / 2 + U()) + u * (y - h / 2 + U())));
       c = c * (1. / s) + 14. / 241;
       V o = c + 1;
-      c = V(c.x / o.x, c.y / o.y, c.z / o.z) * 255;
+      c = V(c.x / o.x, c.y / o.y, c.z / o.z);
+
+      // gamma correction
+      F gamma = 2.2;
+      c = V(powf(c.x, gamma), powf(c.y, gamma), powf(c.z, gamma)) * 255;
+
       fprintf(f, "%c%c%c", (I)c.x, (I)c.y, (I)c.z);
     }
   }
