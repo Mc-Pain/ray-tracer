@@ -370,7 +370,6 @@ I main() {
     for (I x = w; x--;) {
       V c;
       I p;
-#pragma omp parallel for private(p) shared(s, c, e, g, l, x, w, u, y, h)
       for (p = s; p > 0; p--)
         c = c + T(e, !(g + l * (x - w / 2 + U()) + u * (y - h / 2 + U())));
       c = c * (1. / s) + 14. / 241;
