@@ -3,7 +3,6 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h> // card > pixar.ppm
-#include <omp.h>
 #include <time.h>
 #define R return
 #define O operator
