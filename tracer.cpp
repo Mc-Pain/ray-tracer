@@ -10,6 +10,11 @@ static struct tm m_time;
 
 #include <glm/glm.hpp>
 
+#define CLOUD_ROWS 16
+#define CLOUD_COLS CLOUD_ROWS
+#define CLOUD_RESOLUTION (CLOUD_COLS * CLOUD_ROWS)
+int clouds[CLOUD_RESOLUTION];
+
 float operator% (glm::vec3 a, glm::vec3 b) {
   return glm::dot(a, b);
 }
@@ -19,6 +24,7 @@ glm::vec3 operator! (glm::vec3 a) {
 
 float L(float l, float r) { return l < r ? l : r; }
 float U() { return(float) rand() / RAND_MAX; }
+int UI() { return rand(); }
 float B(glm::vec3 p, glm::vec3 l, glm::vec3 h) {
   l = p - l;
   h = h - p;
@@ -263,6 +269,59 @@ void calculateSunPosition() {
   position.z = z1;
 }
 
+void generateClouds() {
+  bool checkerboard = false;
+  for (long i = 0; i < CLOUD_RESOLUTION; i++) {
+    if (checkerboard) {
+      long col = i / CLOUD_COLS;
+      long row = i % CLOUD_ROWS;
+      clouds[i] = (col + row) % 2;
+    } else {
+      clouds[i] = UI() % 8 < 1;
+    }
+  }
+}
+
+bool traceClouds(glm::vec3 orig, glm::vec3 dir) {
+  // clouds are 10 km high, each square is 1 km across
+  float cloudHeight = 10000;
+  //float cloudThickness = 10;
+
+  if (fabsf(dir.y) < 1e-6) {
+    // no intersect, assuming dir is parallel to horizon
+    return false;
+  }
+
+  // where ray intersects cloud level?
+  float coeff = (cloudHeight - orig.y) / dir.y;
+  if (coeff < 0) {
+    // negative distance, no intersect
+    return false;
+  }
+
+  // point where intersection happens
+  glm::vec3 p = orig + (dir * coeff);
+
+  long col = p.x / 1000;
+  long row = p.z / 1000;
+  if (p.x < 0) {
+    col = CLOUD_COLS - (-col % CLOUD_COLS) - 1;
+  }
+  if (p.z < 0) {
+    row = CLOUD_ROWS - (-row % CLOUD_ROWS) - 1;
+  }
+
+  col %= CLOUD_COLS;
+  row %= CLOUD_ROWS;
+
+  long i = col * CLOUD_COLS + row;
+
+  if (clouds[i] == 1) {
+    return true;
+  }
+
+  return false;
+}
 
 glm::vec3 T(glm::vec3 o, glm::vec3 d) {
   glm::vec3 h, n, r = glm::vec3(0.f), t = glm::vec3(1.f);
@@ -324,7 +383,7 @@ glm::vec3 T(glm::vec3 o, glm::vec3 d) {
         for (int a = 0; a < w; a++) {
           glm::vec3 l = !ls[a], hc = h, nc = n;
           float i = n % l;
-          if (i > 0 && M(h + n * .1f, l, hc, nc) == 3) {
+          if (i > 0 && M(h + n * .1f, l, hc, nc) == 3 && !traceClouds(o, l)) {
             glm::vec3 incident = computeIncidentLight(l, o, l, 0, 1e9);
             r = r + t * incident * cs[a] * i;
           }
@@ -334,7 +393,11 @@ glm::vec3 T(glm::vec3 o, glm::vec3 d) {
     if (m == 3) {
       for (int a = 0; a < w; a++) {
         glm::vec3 l = !ls[a];
-        r = r + t * computeIncidentLight(l, o, d, 0, 1e9) * cs[a];
+        if (traceClouds(o, d)) {
+          r = r + t * computeIncidentLight(l, o, l, 0, 1e9) * cs[a] * 0.2f;
+        } else {
+          r = r + t * computeIncidentLight(l, o, d, 0, 1e9) * cs[a];
+        }
       }
       break;
     }
@@ -350,6 +413,7 @@ int main() {
   s_time = time(NULL);
   localtime_r (&s_time, &m_time);
   calculateSunPosition();
+  generateClouds();
 
   int w = 1920, h = 1080, s = 1;
   glm::vec3 e(-22, 5, 25),
