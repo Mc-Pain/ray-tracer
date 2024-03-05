@@ -232,6 +232,10 @@ glm::vec3 computeIncidentLight(glm::vec3 sunDirection, glm::vec3 orig, glm::vec3
 }
 
 void calculateSunPosition() {
+  const float latitude  = 55.1; // N is positive, S is negative
+  const float longitude = 36.6; // E is positive, W is negative
+  const float timezone  = 3;    // local difference with UTC, in hours
+
   position = glm::vec3(0, 0, 1); // x+: west, y+: above horizon, z+: north, initial is south, looking at SW
 
   float x1, y1, z1;
@@ -249,8 +253,8 @@ void calculateSunPosition() {
   // calculate sun rotation (degrees)
   float time = (m_time.tm_hour * 15 + m_time.tm_min / 4.0);
 
-  time -= 3 * 15;   // subtract timezone
-  time += 36.6;     // add longitude
+  time -= timezone * 15;    // subtract timezone
+  time += longitude;        // add longitude
   time /= (360 / 6.283185); // to radians
 
   // rotate along y
@@ -260,7 +264,7 @@ void calculateSunPosition() {
   position.z = z1;
 
   // rotate along x
-  float angle = 55.1 - 90; // latitude (55.1 N)
+  float angle = latitude - 90;
   angle /= (360 / 6.283185);
 
   y1 = position.y * cosf(angle) + position.z * sinf(angle);
