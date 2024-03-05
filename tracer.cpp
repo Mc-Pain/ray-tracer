@@ -326,14 +326,39 @@ bool traceClouds(glm::vec3 orig, glm::vec3 dir) {
 glm::vec3 T(glm::vec3 o, glm::vec3 d) {
   glm::vec3 h, n, r = glm::vec3(0.f), t = glm::vec3(1.f);
 
-  // light sources
-  glm::vec3 ls[] = {
-    position,
-  };
-  glm::vec3 cs[] = {
-    glm::vec3(500, 500, 500),
-  };
-  int w = 1;
+  bool rainbow = false;
+  int w;
+  glm::vec3 ls[11];
+  glm::vec3 cs[11];
+  if (rainbow) {
+    w = 11;
+    glm::vec3 css[] = {
+      glm::vec3(500, 0, 0),
+      glm::vec3(500, 200, 0),
+      glm::vec3(500, 400, 0),
+      glm::vec3(400, 500, 0),
+      glm::vec3(200, 500, 0),
+      glm::vec3(0, 500, 0),
+      glm::vec3(0, 500, 200),
+      glm::vec3(0, 500, 400),
+      glm::vec3(0, 400, 500),
+      glm::vec3(0, 200, 500),
+      glm::vec3(0, 0, 500),
+    };
+    for (int i = -5; i <= 5; i++) {
+      ls[i+5] = position + (glm::vec3(0, 0.01, 0) * glm::vec3(i));
+      cs[i+5] = css[i+5] / 10.f;
+    }
+  } else {
+    // light sources
+    ls[0] = {
+      position,
+    };
+    cs[0] = {
+      glm::vec3(500, 500, 500),
+    };
+    w = 1;
+  }
 
   for (int b = 3; b--;) {
     int m = M(o, d, h, n);
