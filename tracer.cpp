@@ -303,8 +303,12 @@ bool traceClouds(glm::vec3 orig, glm::vec3 dir) {
     return false;
   }
 
+  // wind, clouds are moving 10m/s from west to east
+  const float seconds = m_time.tm_hour * 60 * 60 + m_time.tm_min * 60;
+  glm::vec3 shift = seconds * glm::vec3(10.f, 0.f, 0.f);
+
   // point where intersection happens
-  glm::vec3 p = orig + (dir * coeff);
+  glm::vec3 p = shift + orig + (dir * coeff);
 
   long col = p.x / 1000;
   long row = p.z / 1000;
