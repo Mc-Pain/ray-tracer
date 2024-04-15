@@ -9,6 +9,7 @@ static long int s_time;
 static struct tm m_time;
 
 #include <glm/glm.hpp>
+#include <glm/gtx/rotate_vector.hpp> // for rotating vectors
 
 #define CLOUD_ROWS 16
 #define CLOUD_COLS CLOUD_ROWS
@@ -414,11 +415,44 @@ glm::vec3 T(glm::vec3 o, glm::vec3 d) {
         t = t * .2f;
 
         for (int a = 0; a < w; a++) {
-          glm::vec3 l = !ls[a], hc = h, nc = n;
+          glm::vec3 l = !ls[a];
           float i = n % l;
-          if (i > 0 && M(h + n * .1f, l, hc, nc) == 3 && !traceClouds(o, l)) {
+          /*
+           * Three conditions:
+           * 1) Texture faces towards light emitter
+           * 2) Chosen ray hits the sky if pointed towards sun
+           * 3) Chosen ray doesn't hit the cloud
+           *
+           * If all are True, the pixel is lit directly from sun.
+           */
+          if (i > 0 && !traceClouds(o, l)) {
             glm::vec3 incident = computeIncidentLight(l, o, l, 0, 1e9);
-            r = r + t * incident * cs[a] * i;
+
+            float cosTheta = glm::dot(glm::vec3(0, 0, 1), l);
+            float sinTheta = 1 - (cosTheta * cosTheta);
+            for (int j = 0; j < 100; j++) {
+              float radii = sqrt(U());
+              float phi = 6.283185 * U();
+
+              // angular diameter of Sun is 30', cos(15') ~= 0.99999, sin(15') ~= 0.00436
+              float x = .00436 * cosf(phi);
+              float y = .00436 * sinf(phi);
+              glm::vec3 dir;
+
+              // time to transform (0, 0, 1) -> (x_l, y_l, z_l)
+              if (fabsf(sinTheta) < 0.00001) {
+                // l is near zenith, (x, y, 1) will work
+                dir = glm::vec3(x, y, 1);
+              } else {
+                glm::vec3 axis = !glm::vec3(-l.y, l.x, 0);
+                dir = glm::rotate(glm::vec3(x, y, 1), acosf(cosTheta), axis);
+              }
+
+              glm::vec3 hc = h, nc = n;
+              if (M(h + n * .1f, dir, hc, nc) == 3) {
+                r = r + t * incident * cs[a] * i * 0.01f;
+              }
+            }
           }
         }
       }
