@@ -16,6 +16,11 @@ static struct tm m_time;
 #define CLOUD_RESOLUTION (CLOUD_COLS * CLOUD_ROWS)
 int clouds[CLOUD_RESOLUTION];
 
+// clouds are 10 km high, each square is 1 km across
+float cloudHeight = 1000;
+glm::vec3 cloud_color = glm::vec3(0);
+bool clouds_initalized = false;
+
 float operator% (glm::vec3 a, glm::vec3 b) {
   return glm::dot(a, b);
 }
@@ -288,8 +293,6 @@ void generateClouds() {
 }
 
 bool traceClouds(glm::vec3 orig, glm::vec3 dir) {
-  // clouds are 10 km high, each square is 1 km across
-  float cloudHeight = 10000;
   //float cloudThickness = 10;
 
   if (fabsf(dir.y) < 1e-6) {
@@ -304,15 +307,15 @@ bool traceClouds(glm::vec3 orig, glm::vec3 dir) {
     return false;
   }
 
-  // wind, clouds are moving 10m/s from west to east
+  // wind, clouds are moving 0.1m/s from west to east
   const float seconds = m_time.tm_hour * 60 * 60 + m_time.tm_min * 60;
-  glm::vec3 shift = seconds * glm::vec3(10.f, 0.f, 0.f);
+  glm::vec3 shift = seconds * glm::vec3(0.1f, 0.f, 0.f);
 
   // point where intersection happens
   glm::vec3 p = shift + orig + (dir * coeff);
 
-  long col = p.x / 1000;
-  long row = p.z / 1000;
+  long col = p.x / 100;
+  long row = p.z / 100;
   if (p.x < 0) {
     col = CLOUD_COLS - (-col % CLOUD_COLS) - 1;
   }
@@ -330,6 +333,36 @@ bool traceClouds(glm::vec3 orig, glm::vec3 dir) {
   }
 
   return false;
+}
+
+glm::vec3 generateCloudColor(glm::vec3 sunDirection, glm::vec3 sunColor) {
+  int cloud_picks = 256;
+  glm::vec3 ret = glm::vec3(0);
+  for (int i = 0; i < cloud_picks; i++) {
+    // pick a random uniform point from sphere
+    float theta = 6.283185 * U();
+    float cosphi = 1 - 2*U();
+    float sinphi = 1 - cosphi * cosphi;
+
+    float x = sinphi * cos(theta);
+    float y = sinphi * sin(theta);
+    float z = cosphi;
+
+    glm::vec3 dir = glm::vec3(x, y, z);
+    glm::vec3 orig = glm::vec3(0, cloudHeight, 0);
+
+    /*
+     * incident light, times:
+     * 1) normal
+     * 2) sun color
+     * 3) 1 / cloud_picks
+     * 4) cloud albedo = 0.9
+     */
+    float normal = glm::vec3(0, 1, 0) % sunDirection;
+    glm::vec3 incident = computeIncidentLight(sunDirection, orig, dir, 0, 1e9) + computeIncidentLight(sunDirection, orig, sunDirection, 0, 1e9);
+    ret += incident * normal * sunColor / (float)cloud_picks;
+  }
+  return ret;
 }
 
 glm::vec3 T(glm::vec3 o, glm::vec3 d) {
@@ -367,6 +400,15 @@ glm::vec3 T(glm::vec3 o, glm::vec3 d) {
       glm::vec3(500, 500, 500),
     };
     w = 1;
+  }
+
+  // initialize cloud color
+  if (!clouds_initalized) {
+    for (int a = 0; a < w; a++) {
+      glm::vec3 l = !ls[a];
+      cloud_color += generateCloudColor(l, cs[a]);
+    }
+    clouds_initalized = true;
   }
 
   for (int b = 3; b--;) {
@@ -461,7 +503,7 @@ glm::vec3 T(glm::vec3 o, glm::vec3 d) {
       for (int a = 0; a < w; a++) {
         glm::vec3 l = !ls[a];
         if (traceClouds(o, d)) {
-          r = r + t * computeIncidentLight(l, o, l, 0, 1e9) * cs[a] * 0.2f;
+          r = r + t * cloud_color;
         } else {
           r = r + t * computeIncidentLight(l, o, d, 0, 1e9) * cs[a];
         }
