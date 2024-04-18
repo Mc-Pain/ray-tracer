@@ -473,7 +473,7 @@ glm::vec3 T(glm::vec3 o, glm::vec3 d) {
             float cosTheta = glm::dot(glm::vec3(0, 0, 1), l);
             float sinTheta = 1 - (cosTheta * cosTheta);
 
-            int sun_picks = 100;
+            int sun_picks = 16;
             for (int j = 0; j < sun_picks; j++) {
               float radii = sqrt(U());
               float phi = 6.283185 * U();
