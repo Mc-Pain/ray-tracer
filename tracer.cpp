@@ -360,7 +360,7 @@ glm::vec3 generateCloudColor(glm::vec3 sunDirection, glm::vec3 sunColor) {
      */
     float normal = glm::vec3(0, 1, 0) % sunDirection;
     glm::vec3 incident = computeIncidentLight(sunDirection, orig, dir, 0, 1e9) + computeIncidentLight(sunDirection, orig, sunDirection, 0, 1e9);
-    ret += incident * normal * sunColor / (float)cloud_picks;
+    ret += incident * normal * sunColor / (1.f * cloud_picks);
   }
   return ret;
 }
@@ -472,7 +472,9 @@ glm::vec3 T(glm::vec3 o, glm::vec3 d) {
 
             float cosTheta = glm::dot(glm::vec3(0, 0, 1), l);
             float sinTheta = 1 - (cosTheta * cosTheta);
-            for (int j = 0; j < 100; j++) {
+
+            int sun_picks = 100;
+            for (int j = 0; j < sun_picks; j++) {
               float radii = sqrt(U());
               float phi = 6.283185 * U();
 
@@ -492,7 +494,7 @@ glm::vec3 T(glm::vec3 o, glm::vec3 d) {
 
               glm::vec3 hc = h, nc = n;
               if (M(h + n * .1f, dir, hc, nc) == 3) {
-                r = r + t * incident * cs[a] * i * 0.01f;
+                r = r + t * incident * cs[a] * i / (1.f * sun_picks);
               }
             }
           }
