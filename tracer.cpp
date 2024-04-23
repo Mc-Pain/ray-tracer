@@ -467,7 +467,7 @@ glm::vec3 T(glm::vec3 o, glm::vec3 d) {
            *
            * If all are True, the pixel is lit directly from sun.
            */
-          if (i > 0 && !traceClouds(o, l)) {
+          if (i > 0) {
             glm::vec3 incident = computeIncidentLight(l, o, l, 0, 1e9);
 
             float cosTheta = glm::dot(glm::vec3(0, 0, 1), l);
@@ -493,7 +493,7 @@ glm::vec3 T(glm::vec3 o, glm::vec3 d) {
               }
 
               glm::vec3 hc = h, nc = n;
-              if (M(h + n * .1f, dir, hc, nc) == 3) {
+              if (M(h + n * .1f, dir, hc, nc) == 3 && !traceClouds(o, dir)) {
                 r = r + t * incident * cs[a] * i / (1.f * sun_picks);
               }
             }
