@@ -381,6 +381,44 @@ glm::vec3 diffuse(glm::vec3 direction, glm::vec3 n) {
          n * sqrtf(c);
 }
 
+glm::vec3 calculateAmbientLight(glm::vec3 sunColor, glm::vec3 l, glm::vec3 o, glm::vec3 n, glm::vec3 h) {
+  glm::vec3 r = glm::vec3(0);
+  float i = n % l;
+
+  if (i > 0) {
+    glm::vec3 incident = computeIncidentLight(l, o, l, 0, 1e9);
+
+    float cosTheta = glm::dot(glm::vec3(0, 0, 1), l);
+    float sinTheta = 1 - (cosTheta * cosTheta);
+
+    int sun_picks = 16;
+    for (int j = 0; j < sun_picks; j++) {
+      float radii = sqrt(U());
+      float phi = 6.283185 * U();
+
+      // angular diameter of Sun is 30', cos(15') ~= 0.99999, sin(15') ~= 0.00436
+      float x = .00436 * cosf(phi);
+      float y = .00436 * sinf(phi);
+      glm::vec3 dir;
+
+      // time to transform (0, 0, 1) -> (x_l, y_l, z_l)
+      if (fabsf(sinTheta) < 0.00001) {
+        // l is near zenith, (x, y, 1) will work
+        dir = glm::vec3(x, y, 1);
+      } else {
+        glm::vec3 axis = !glm::vec3(-l.y, l.x, 0);
+        dir = glm::rotate(glm::vec3(x, y, 1), acosf(cosTheta), axis);
+      }
+
+      glm::vec3 hc = h, nc = n;
+      if (M(h + n * .1f, dir, hc, nc) == 3 && !traceClouds(o, dir)) {
+        r += incident * sunColor * i / (1.f * sun_picks);
+      }
+    }
+  }
+  return r;
+}
+
 glm::vec3 T(glm::vec3 o, glm::vec3 d) {
   glm::vec3 h, n, r = glm::vec3(0.f), t = glm::vec3(1.f);
 
@@ -470,46 +508,7 @@ glm::vec3 T(glm::vec3 o, glm::vec3 d) {
 
         for (int a = 0; a < w; a++) {
           glm::vec3 l = !ls[a];
-          float i = n % l;
-          /*
-           * Three conditions:
-           * 1) Texture faces towards light emitter
-           * 2) Chosen ray hits the sky if pointed towards sun
-           * 3) Chosen ray doesn't hit the cloud
-           *
-           * If all are True, the pixel is lit directly from sun.
-           */
-          if (i > 0) {
-            glm::vec3 incident = computeIncidentLight(l, o, l, 0, 1e9);
-
-            float cosTheta = glm::dot(glm::vec3(0, 0, 1), l);
-            float sinTheta = 1 - (cosTheta * cosTheta);
-
-            int sun_picks = 16;
-            for (int j = 0; j < sun_picks; j++) {
-              float radii = sqrt(U());
-              float phi = 6.283185 * U();
-
-              // angular diameter of Sun is 30', cos(15') ~= 0.99999, sin(15') ~= 0.00436
-              float x = .00436 * cosf(phi);
-              float y = .00436 * sinf(phi);
-              glm::vec3 dir;
-
-              // time to transform (0, 0, 1) -> (x_l, y_l, z_l)
-              if (fabsf(sinTheta) < 0.00001) {
-                // l is near zenith, (x, y, 1) will work
-                dir = glm::vec3(x, y, 1);
-              } else {
-                glm::vec3 axis = !glm::vec3(-l.y, l.x, 0);
-                dir = glm::rotate(glm::vec3(x, y, 1), acosf(cosTheta), axis);
-              }
-
-              glm::vec3 hc = h, nc = n;
-              if (M(h + n * .1f, dir, hc, nc) == 3 && !traceClouds(o, dir)) {
-                r = r + t * incident * cs[a] * i / (1.f * sun_picks);
-              }
-            }
-          }
+          r += t * calculateAmbientLight(cs[a], l, o, n, h);
         }
       }
     }
