@@ -493,6 +493,10 @@ glm::vec3 T(glm::vec3 o, glm::vec3 d) {
           break;
       }
       r = r + letter_color;
+      for (int a = 0; a < w; a++) {
+        glm::vec3 l = !ls[a];
+        r += t * calculateAmbientLight(cs[a], l, o, n, h);
+      }
     }
     if (m == 2) {
       if (U() < 0) {
