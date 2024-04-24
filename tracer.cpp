@@ -365,6 +365,22 @@ glm::vec3 generateCloudColor(glm::vec3 sunDirection, glm::vec3 sunColor) {
   return ret;
 }
 
+glm::vec3 specular(glm::vec3 direction, glm::vec3 normal) {
+  return direction + normal * (normal % direction * -2);
+}
+
+glm::vec3 diffuse(glm::vec3 direction, glm::vec3 n) {
+  float p = 6.283185 * U(),
+        c = U(),
+        s = sqrtf(1 - c),
+        g = n.z < 0 ? -1 : 1,
+        u = -1 / (g + n.z),
+        v = n.x * n.y * u;
+  return glm::vec3(v, g + n.y * n.y * u, -n.y) * (cosf(p) * s) +
+         glm::vec3(1 + g * n.x * n.x * u, g * v, -g * n.x) * (sinf(p) * s) +
+         n * sqrtf(c);
+}
+
 glm::vec3 T(glm::vec3 o, glm::vec3 d) {
   glm::vec3 h, n, r = glm::vec3(0.f), t = glm::vec3(1.f);
 
@@ -416,7 +432,7 @@ glm::vec3 T(glm::vec3 o, glm::vec3 d) {
     if (!m)
       break;
     if (m == 1) {
-      d = d + n * (n % d * -2);
+      d = specular(d, n);
       o = h + d * .1f;
       t = t * .2f;
 
@@ -443,16 +459,12 @@ glm::vec3 T(glm::vec3 o, glm::vec3 d) {
     if (m == 2) {
       if (U() < 0) {
         // specular reflection
-        d = d + n * (n % d * -2);
+        d = specular(d, n);
         o = h + d * .1f;
         t = t * .2f;
       } else {
         // diffuse reflection
-        float p = 6.283185 * U(), c = U(), s = sqrtf(1 - c),
-          g = n.z < 0 ? -1 : 1, u = -1 / (g + n.z), v = n.x * n.y * u;
-        d = glm::vec3(v, g + n.y * n.y * u, -n.y) * (cosf(p) * s) +
-            glm::vec3(1 + g * n.x * n.x * u, g * v, -g * n.x) * (sinf(p) * s) +
-            n * sqrtf(c);
+        d = diffuse(d, n);
         o = h + d * .1f;
         t = t * .2f;
 
