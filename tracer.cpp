@@ -20,6 +20,7 @@ int clouds[CLOUD_RESOLUTION];
 float cloudHeight = 1000;
 glm::vec3 cloud_color = glm::vec3(0);
 bool clouds_initalized = false;
+bool inside_letter = false;
 
 float operator% (glm::vec3 a, glm::vec3 b) {
   return glm::dot(a, b);
@@ -118,6 +119,10 @@ float S(glm::vec3 p, int &m) {
   d = sqrtf(d);
   d = powf(powf(d, 8) + powf(p.z, 8), .125) - .5;
   m = 1;
+
+  if (inside_letter)
+    d = -d;
+
   float r = L(
           -L(B(p, glm::vec3(-30, -.5, -30), glm::vec3(30, 18, 30)),
              B(p, glm::vec3(-25, 17, -25), glm::vec3(25, 20, 25))),
@@ -381,6 +386,30 @@ glm::vec3 diffuse(glm::vec3 direction, glm::vec3 n) {
          n * sqrtf(c);
 }
 
+// n1, n2 indices of refraction of incoming and refracted media
+// if n1 > n2, total internal reflection can occur
+bool refract(glm::vec3 &direction, glm::vec3 normal, float n1, float n2) {
+  if (inside_letter) {
+    float temp = n1;
+    n2 = n1;
+    n1 = temp;
+  }
+  float r = n1 / n2;
+  float cosine1 = -(normal % direction);
+
+  // cosine of refraction angle, squared
+  // if negative, total internal reflection occurs, means there is no refraction
+  float radicand = 1 - r*r * (1 - cosine1 * cosine1);
+  if (radicand < 0) {
+    direction = specular(direction, normal);
+    return false;
+  } else {
+    // refract
+    direction = r * direction + (r * cosine1 - sqrtf(radicand)) * normal;
+    return true;
+  }
+}
+
 glm::vec3 calculateAmbientLight(glm::vec3 sunColor, glm::vec3 l, glm::vec3 o, glm::vec3 n, glm::vec3 h) {
   glm::vec3 r = glm::vec3(0);
   float i = n % l;
@@ -465,13 +494,19 @@ glm::vec3 T(glm::vec3 o, glm::vec3 d) {
     clouds_initalized = true;
   }
 
+  inside_letter = false;
+
   for (int b = 3; b--;) {
     int m = M(o, d, h, n);
     if (!m)
       break;
     if (m == 1) {
-      d = specular(d, n);
+      bool refracted = refract(d, n, 1.f, 1.5f);
       o = h + d * .1f;
+      if (refracted) {
+        inside_letter = !inside_letter;
+        b += 1;
+      }
       t = t * .2f;
 
       // glowing letters?
