@@ -404,8 +404,29 @@ bool refract(glm::vec3 &direction, glm::vec3 normal, float n1, float n2) {
     direction = specular(direction, normal);
     return false;
   } else {
-    // refract
-    direction = r * direction + (r * cosine1 - sqrtf(radicand)) * normal;
+    float cosine2 = sqrtf(radicand);
+
+    // apply Fresnel formulas
+    float n1cosi = n1 * cosine1;
+    float n2cosi = n2 * cosine1;
+    float n1cost = n1 * cosine2;
+    float n2cost = n2 * cosine2;
+
+    // reflect ratios, s-, p- polarisation
+    float rs = (n1cosi - n2cost) / (n1cosi + n2cost);
+    float rp = (n2cosi - n1cost) / (n2cosi + n1cost);
+
+    // transmit ratios, s-, p- polarisation
+    float ts = 2 * n1cosi / (n1cosi + n2cost);
+    float tp = 2 * n1cosi / (n2cosi + n1cost);
+
+    float total = rs + rp + ts + tp;
+    if (total * U() < (rs + rp)) {
+      direction = specular(direction, normal);
+      return false;
+    }
+
+    direction = r * direction + (r * cosine1 - cosine2) * normal;
     return true;
   }
 }
