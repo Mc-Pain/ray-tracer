@@ -138,7 +138,7 @@ int M(glm::vec3 o, glm::vec3 d, glm::vec3 &h, glm::vec3 &n) {
   int m, s = 0;
   float t = 0, c;
   for (; t < 100; t += c)
-    if ((c = S(h = o + d * t, m)) < .01 || ++s > 99)
+    if ((c = S(h = o + d * t, m)) < .00001 || ++s > 99)
       return n = !glm::vec3(S(h + glm::vec3(.01, 0, 0), s) - c, S(h + glm::vec3(0, .01, 0), s) - c,
                     S(h + glm::vec3(0, 0, .01), s) - c),
              m;
