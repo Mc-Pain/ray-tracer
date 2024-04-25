@@ -524,11 +524,6 @@ glm::vec3 T(glm::vec3 o, glm::vec3 d) {
     if (m == 1) {
       bool refracted = refract(d, n, 1.f, 1.5f);
       o = h + d * .1f;
-      if (refracted) {
-        inside_letter = !inside_letter;
-        b += 1;
-      }
-      t = t * .2f;
 
       // glowing letters?
       glm::vec3 letter_color;
@@ -548,7 +543,12 @@ glm::vec3 T(glm::vec3 o, glm::vec3 d) {
           letter_color = glm::vec3(5, 1, 0);
           break;
       }
-      r = r + letter_color;
+      if (refracted) {
+        inside_letter = !inside_letter;
+        b += 1;
+        t *= !letter_color;
+      }
+      r = r + !letter_color;
       for (int a = 0; a < w; a++) {
         glm::vec3 l = !ls[a];
         r += t * calculateAmbientLight(cs[a], l, o, n, h);
