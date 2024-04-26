@@ -72,7 +72,7 @@ float S(glm::vec3 p, int &m) {
   float d = 1e9;
   glm::vec3 f = p;
   f.z = 0;
-
+/*
   char l[] =
              "5_=_"  // A
              "=W=_"  // B
@@ -115,13 +115,20 @@ float S(glm::vec3 p, int &m) {
       e = glm::vec3(ll[i + 2] - 79, ll[i + 3] - 79, 0) * .5f - b,
       o = f - (b + e * L(-L((b - f) % e / (e % e), 0), 1));
     d = L(d, o % o);
-  }
+  }*/
   d = sqrtf(d);
-  d = powf(powf(d, 8) + powf(p.z, 8), .125) - .5;
+  //d = powf(powf(d, 8) + powf(p.z, 8), .125) - .5;
   m = 1;
+  // draw a sphere at (8, -2, 0), radius = 8
+  {
+    glm::vec3 o = glm::vec3(-1, 4, 0) - p;
+    float r = sqrtf(o % o) - 4.f;
+    d = L(d, r);
+  }
 
   if (inside_letter)
     d = -d;
+
 
   float r = L(
           -L(B(p, glm::vec3(-30, -.5, -30), glm::vec3(30, 18, 30)),
