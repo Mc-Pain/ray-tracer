@@ -476,8 +476,15 @@ glm::vec3 calculateAmbientLight(glm::vec3 sunColor, glm::vec3 l, glm::vec3 o, gl
   return r;
 }
 
-glm::vec3 T(glm::vec3 o, glm::vec3 d) {
-  glm::vec3 h, n, r = glm::vec3(0.f), t = glm::vec3(1.f);
+glm::vec3 T(glm::vec3 o,
+            glm::vec3 d,
+            glm::vec3 t = glm::vec3(1.f),
+            int depth = 3
+) {
+  glm::vec3 h, n, r = glm::vec3(0.f);
+
+  if (depth < 0)
+    return r;
 
   bool rainbow = false;
   int w;
@@ -522,75 +529,73 @@ glm::vec3 T(glm::vec3 o, glm::vec3 d) {
     clouds_initalized = true;
   }
 
-  inside_letter = false;
+  int m = M(o, d, h, n);
+  if (!m)
+    return glm::vec3(0.f);
+  if (m == 1) {
+    bool refracted = refract(d, n, 1.f, 1.5f);
+    o = h + d * .1f;
 
-  for (int b = 3; b--;) {
-    int m = M(o, d, h, n);
-    if (!m)
-      break;
-    if (m == 1) {
-      bool refracted = refract(d, n, 1.f, 1.5f);
+    // glowing letters?
+    glm::vec3 letter_color;
+    int season = ((m_time.tm_mon + 1) % 12) / 3; // 0-11 -> 0-3
+
+    switch (season) {
+      case 0: // winter
+        letter_color = glm::vec3(0, 5, 5);
+        break;
+      case 1: // spring
+        letter_color = glm::vec3(0, 5, 0);
+        break;
+      case 2: // summer
+        letter_color = glm::vec3(5, 5, 0);
+        break;
+      case 3: // fall
+        letter_color = glm::vec3(5, 1, 0);
+        break;
+    }
+    if (refracted) {
+      inside_letter = !inside_letter;
+      depth += 1;
+      //t *= !letter_color;
+    }
+    //r = r + !letter_color;
+    for (int a = 0; a < w; a++) {
+      glm::vec3 l = !ls[a];
+      r += t * calculateAmbientLight(cs[a], l, o, n, h);
+    }
+  }
+  if (m == 2) {
+    if (U() < 0) {
+      // specular reflection
+      d = specular(d, n);
       o = h + d * .1f;
+      t = t * .2f;
+    } else {
+      // diffuse reflection
+      d = diffuse(d, n);
+      o = h + d * .1f;
+      t = t * .2f;
 
-      // glowing letters?
-      glm::vec3 letter_color;
-      int season = ((m_time.tm_mon + 1) % 12) / 3; // 0-11 -> 0-3
-
-      switch (season) {
-        case 0: // winter
-          letter_color = glm::vec3(0, 5, 5);
-          break;
-        case 1: // spring
-          letter_color = glm::vec3(0, 5, 0);
-          break;
-        case 2: // summer
-          letter_color = glm::vec3(5, 5, 0);
-          break;
-        case 3: // fall
-          letter_color = glm::vec3(5, 1, 0);
-          break;
-      }
-      if (refracted) {
-        inside_letter = !inside_letter;
-        b += 1;
-        t *= !letter_color;
-      }
-      r = r + !letter_color;
       for (int a = 0; a < w; a++) {
         glm::vec3 l = !ls[a];
         r += t * calculateAmbientLight(cs[a], l, o, n, h);
       }
     }
-    if (m == 2) {
-      if (U() < 0) {
-        // specular reflection
-        d = specular(d, n);
-        o = h + d * .1f;
-        t = t * .2f;
-      } else {
-        // diffuse reflection
-        d = diffuse(d, n);
-        o = h + d * .1f;
-        t = t * .2f;
-
-        for (int a = 0; a < w; a++) {
-          glm::vec3 l = !ls[a];
-          r += t * calculateAmbientLight(cs[a], l, o, n, h);
-        }
-      }
-    }
-    if (m == 3) {
-      for (int a = 0; a < w; a++) {
-        glm::vec3 l = !ls[a];
-        if (traceClouds(o, d)) {
-          r = r + t * cloud_color;
-        } else {
-          r = r + t * computeIncidentLight(l, o, d, 0, 1e9) * cs[a];
-        }
-      }
-      break;
-    }
   }
+  if (m == 3) {
+    inside_letter = false;
+    for (int a = 0; a < w; a++) {
+      glm::vec3 l = !ls[a];
+      if (traceClouds(o, d)) {
+        r = r + t * cloud_color;
+      } else {
+        r = r + t * computeIncidentLight(l, o, d, 0, 1e9) * cs[a];
+      }
+    }
+    return r;
+  }
+  r += T(o, d, t, depth - 1);
   return r;
 }
 int main() {
