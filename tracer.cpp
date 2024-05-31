@@ -642,18 +642,31 @@ int main() {
   generateClouds();
 
   int w = 1920, h = 1080, s = 1;
+
+  glm::vec3 *out = (glm::vec3*) calloc(w*h, sizeof(glm::vec3));
+
   glm::vec3 e(-22, 5, 25),
       g = !(glm::vec3(-3, 4, 0) - e), l = !glm::vec3(g.z, 0, -g.x) * (1.f / w),
       u(g.y * l.z - g.z * l.y, g.z * l.x - g.x * l.z, g.x * l.y - g.y * l.x);
-  fprintf(f, "P6 %d %d 255 ",
-          w, h);
   for (int y = h; y--;) {
     printf("Rendered %d rows out of %d\n", y, h);
     for (int x = w; x--;) {
+      long index = y*w + x;
       glm::vec3 c(0.f);
       int p;
       for (p = s; p > 0; p--)
         c = c + T(e, !(g + l * (x - w / 2 + U()) + u * (y - h / 2 + U())));
+      out[index] = c;
+    }
+  }
+
+  // post-processing and printing
+  fprintf(f, "P6 %d %d 255 ",
+          w, h);
+  for (int y = h; y--;) {
+    for (int x = w; x--;) {
+      long index = y*w + x;
+      glm::vec3 c = out[index];
       c = c * (1.f / s) + 14.f / 241;
       glm::vec3 o = c + 1.f;
       c = glm::vec3(c.x / o.x, c.y / o.y, c.z / o.z);
@@ -668,4 +681,6 @@ int main() {
   fclose(f);
 
   rename("/tmp/pixar.ppm.tmp", "/tmp/pixar.ppm");
+
+  free(out);
 } // Andrew Kensler
