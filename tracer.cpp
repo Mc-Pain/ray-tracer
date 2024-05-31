@@ -150,8 +150,8 @@ void draw_prism(float &d, glm::vec3 p) {
 float S(glm::vec3 p, int &m) {
   float d = 1e9;
 
-  draw_clock(d, p);
-  //draw_sphere(d, p);
+  //draw_clock(d, p);
+  draw_sphere(d, p);
   //draw_prism(d, p);
   m = 1;
 
@@ -296,6 +296,9 @@ void calculateSunPosition() {
   z1 = -position.y * sinf(declination) + position.z * cosf(declination);
   position.y = y1;
   position.z = z1;
+
+  m_time.tm_hour = 18;
+  m_time.tm_min  = 00;
 
   // calculate sun rotation (degrees)
   float time = (m_time.tm_hour * 15 + m_time.tm_min / 4.0);
