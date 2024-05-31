@@ -124,6 +124,18 @@ void draw_clock(float &d, glm::vec3 p) {
 void draw_sphere(float &d, glm::vec3 p) {
   glm::vec3 o = glm::vec3(-1, 4, 0) - p;
   float r = sqrtf(o % o) - 4.f;
+
+  // cut the sphere
+  if (p.x < -1) {
+    glm::vec3 p1 = glm::vec3(0, p.y - 4, p.z);
+    float cylinder_distance = sqrtf(p1 % p1) - 4.f;
+
+    glm::vec3 p2 = glm::vec3(p.x + 1, -L(0, -cylinder_distance), 0);
+    float semisphere_distance = sqrtf(p2 % p2);
+
+    r = semisphere_distance;
+  }
+
   d = L(d, r);
 }
 
