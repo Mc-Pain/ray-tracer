@@ -23,6 +23,7 @@ float cloudHeight = 1000;
 glm::vec3 cloud_color = glm::vec3(0);
 bool clouds_initalized = false;
 bool inside_letter = false;
+bool dispersed = false;
 
 float operator% (glm::vec3 a, glm::vec3 b) {
   return glm::dot(a, b);
@@ -574,8 +575,40 @@ glm::vec3 T(glm::vec3 o,
   if (!m)
     return glm::vec3(0.f);
   if (m == 1) {
-    bool refracted = refract(d, n, 1.f, 1.5f);
+    float dispersion = U(); // pick a wavelength: 0 = 760 nm (red), 1 = 380 nm (violet)
+    float refractive_index_violet = 1.5337f;
+    float refractive_index_red = 1.5116f;
+    float refractive_index = refractive_index_red * (1.f - dispersion) + refractive_index_violet * dispersion;
+
+    bool refracted = refract(d, n, 1.f, refractive_index);
     o = h + d * .1f;
+
+    // apply color
+    if (refracted && !dispersed) {
+      float wavelength = 760.f - 380 * dispersion;
+      float red = 0.f;
+      float green = 0.f;
+      float blue = 0.f;
+      if (wavelength > 580) { // red-yellow
+        red = 1.f;
+        green = (760 - wavelength) / (760 - 580);
+      } else if (wavelength > 530) { // yellow-green
+        red = 1 - (580 - wavelength) / (580 - 530);
+        green = 1.f;
+      } else if (wavelength > 470) { // green-cyan
+        green = 1.f;
+        blue = (530 - wavelength) / (530 - 470);
+      } else if (wavelength > 450) { //cyan-blue
+        green = 1 - (470 - wavelength) / (470 - 450);
+        blue = 1.f;
+      } else { // blue-violet
+        blue = 1.f;
+        red = 0.5 * (450 - wavelength) / (450 - 380);
+      }
+      glm::vec3 refracted_ray = glm::vec3(red, green, blue);
+      t *= refracted_ray;
+      dispersed = true;
+    }
 
     // glowing letters?
     glm::vec3 letter_color;
@@ -626,6 +659,7 @@ glm::vec3 T(glm::vec3 o,
   }
   if (m == 3) {
     inside_letter = false;
+    dispersed = false;
     for (int a = 0; a < w; a++) {
       glm::vec3 l = !ls[a];
       if (traceClouds(o, d)) {
