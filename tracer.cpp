@@ -8,6 +8,8 @@
 static long int s_time;
 static struct tm m_time;
 
+#define GLM_SWIZZLE
+
 #include <glm/glm.hpp>
 #include <glm/gtx/rotate_vector.hpp> // for rotating vectors
 
@@ -68,11 +70,10 @@ bool sevenSegTest(int digit, int segment) {
   }
 }
 
-float S(glm::vec3 p, int &m) {
-  float d = 1e9;
+void draw_clock(float &d, glm::vec3 p) {
   glm::vec3 f = p;
   f.z = 0;
-/*
+
   char l[] =
              "5_=_"  // A
              "=W=_"  // B
@@ -115,16 +116,44 @@ float S(glm::vec3 p, int &m) {
       e = glm::vec3(ll[i + 2] - 79, ll[i + 3] - 79, 0) * .5f - b,
       o = f - (b + e * L(-L((b - f) % e / (e % e), 0), 1));
     d = L(d, o % o);
-  }*/
-  d = sqrtf(d);
-  //d = powf(powf(d, 8) + powf(p.z, 8), .125) - .5;
-  m = 1;
-  // draw a sphere at (8, -2, 0), radius = 8
-  {
-    glm::vec3 o = glm::vec3(-1, 4, 0) - p;
-    float r = sqrtf(o % o) - 4.f;
-    d = L(d, r);
   }
+  d = sqrtf(d);
+  d = powf(powf(d, 8) + powf(p.z, 8), .125) - .5;
+}
+
+void draw_sphere(float &d, glm::vec3 p) {
+  glm::vec3 o = glm::vec3(-1, 4, 0) - p;
+  float r = sqrtf(o % o) - 4.f;
+  d = L(d, r);
+}
+
+void draw_prism(float &d, glm::vec3 p) {
+  float unit = sqrtf(3.f) / 6;
+
+  glm::vec4 plane = glm::vec4(0.f, 0.f, -1.f, -20*unit);
+  float d1 = (plane.w + plane.xyz() % p) / sqrtf(plane.xyz() % plane.xyz());
+
+  plane = glm::vec4(6*unit, 0.f, 1.f, -20*unit);
+  float d2 = (plane.w + plane.xyz() % p) / sqrtf(plane.xyz() % plane.xyz());
+
+  plane = glm::vec4(-6*unit, 0.f, 1.f, -20*unit);
+  float d3 = (plane.w + plane.xyz() % p) / sqrtf(plane.xyz() % plane.xyz());
+  float r = -L(-d1, L(-d2, -d3));
+
+  float dh = p.y - 7;
+  float dl = 1 - p.y;
+  r = -L(-r, L(-dh, -dl));
+
+  d = L(d, r);
+}
+
+float S(glm::vec3 p, int &m) {
+  float d = 1e9;
+
+  draw_clock(d, p);
+  //draw_sphere(d, p);
+  //draw_prism(d, p);
+  m = 1;
 
   if (inside_letter)
     d = -d;
