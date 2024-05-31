@@ -630,6 +630,57 @@ glm::vec3 T(glm::vec3 o,
   r += T(o, d, t, depth - 1);
   return r;
 }
+
+glm::vec3 getPixelRandomDirection(int x, int y, int w, int h, glm::vec3 camera, glm::vec3 screenCenter)
+{
+  glm::vec3 g = !(screenCenter - camera),
+            l = !glm::vec3(g.z, 0, -g.x) * (1.f / w),
+            u(g.y * l.z - g.z * l.y, g.z * l.x - g.x * l.z, g.x * l.y - g.y * l.x);
+  return !(g + l * (x - w / 2 + U()) + u * (y - h / 2 + U()));
+}
+
+bool getPixelByDirection(glm::vec3 direction, int &x, int &y, int w, int h, glm::vec3 camera, glm::vec3 screenCenter)
+{
+  glm::vec3 g = screenCenter - camera;
+  glm::vec3 gNorm = !g;
+  const float gLength = g % gNorm;
+
+  /*
+   * direction is a combination of:
+   * g vector (direction of center)
+   * l vector (left-right scan)
+   * u vector (up-down scan)
+   */
+
+  // get G component, length known
+  float gDirLength = direction % gNorm;
+  if (fabsf(gDirLength) < 1e-6) // too small
+    return false;
+
+  if (gDirLength < 0.f) // wrong side
+    return false;
+
+  glm::vec3 directionDenormalized = direction * (gLength / gDirLength);
+
+  glm::vec3 l = !glm::vec3(g.z, 0, -g.x) * (1.f / w);
+  glm::vec3 u(g.y * l.z - g.z * l.y, g.z * l.x - g.x * l.z, g.x * l.y - g.y * l.x);
+
+  float lDir = directionDenormalized % l;
+  float uDir = directionDenormalized % u;
+
+  x = (int) (lDir + w/2 - 0.5f);
+  y = (int) (uDir + h/2 - 0.5f);
+  return true;
+}
+
+glm::vec3 getPixelCenterDirection(int x, int y, int w, int h, glm::vec3 camera, glm::vec3 screenCenter)
+{
+  glm::vec3 g = !(screenCenter - camera),
+            l = !glm::vec3(g.z, 0, -g.x) * (1.f / w),
+            u(g.y * l.z - g.z * l.y, g.z * l.x - g.x * l.z, g.x * l.y - g.y * l.x);
+  return !(g + l * (x - w / 2 + 0.5f) + u * (y - h / 2 + 0.5f));
+}
+
 int main() {
   FILE *f;
   f = fopen("/tmp/pixar.ppm.tmp", "wbx");
@@ -645,9 +696,8 @@ int main() {
 
   glm::vec3 *out = (glm::vec3*) calloc(w*h, sizeof(glm::vec3));
 
-  glm::vec3 e(-22, 5, 25),
-      g = !(glm::vec3(-3, 4, 0) - e), l = !glm::vec3(g.z, 0, -g.x) * (1.f / w),
-      u(g.y * l.z - g.z * l.y, g.z * l.x - g.x * l.z, g.x * l.y - g.y * l.x);
+  glm::vec3 e(-22, 5, 25);
+  glm::vec3 center(-3, 4, 0);
   for (int y = h; y--;) {
     printf("Rendered %d rows out of %d\n", y, h);
     for (int x = w; x--;) {
@@ -655,7 +705,7 @@ int main() {
       glm::vec3 c(0.f);
       int p;
       for (p = s; p > 0; p--)
-        c = c + T(e, !(g + l * (x - w / 2 + U()) + u * (y - h / 2 + U())));
+        c = c + T(e, getPixelRandomDirection(x, y, w, h, e, center));
       out[index] = c;
     }
   }
